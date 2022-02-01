@@ -169,6 +169,7 @@ void MainWindow::loadSettings()
         m_url_slots[i-1] = settings.value(key, "ws://localhost:1234/path/to/ws").toString();
     }
     loadSelectedUrl();
+    saveSettings();
 }
 
 void MainWindow::loadSelectedUrl()
