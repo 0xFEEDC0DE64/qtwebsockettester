@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&m_webSocket, qOverload<QAbstractSocket::SocketError>(&QWebSocket::error), this, &MainWindow::error);
     connect(&m_webSocket, &QWebSocket::pong, this, &MainWindow::pong);
 
-    for (uint8_t i = 1; i <= 10; i++) {
+    for (uint8_t i = 1; i <= m_url_slots.size(); i++) {
         m_ui->saveSlot->addItem("Slot "+QString::number(i));
     }
 
@@ -156,7 +156,7 @@ void MainWindow::saveSettings()
 {
     QSettings settings;
     m_url_slots[m_ui->saveSlot->currentIndex()] = m_ui->lineEditUrl->text();
-    for (uint8_t i = 1; i <= 10; i++) {
+    for (uint8_t i = 1; i <= m_url_slots.size(); i++) {
         settings.setValue("slot"+QString::number(i-1), m_url_slots[i-1]);
     }
 }
@@ -164,7 +164,7 @@ void MainWindow::saveSettings()
 void MainWindow::loadSettings()
 {
     QSettings settings;
-    for (uint8_t i = 1; i <= 10; i++) {
+    for (uint8_t i = 1; i <= m_url_slots.size(); i++) {
         QString key = "slot"+QString::number(i-1);
         m_url_slots[i-1] = settings.value(key, "ws://localhost:1234/path/to/ws").toString();
     }
