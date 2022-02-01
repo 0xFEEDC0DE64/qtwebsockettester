@@ -102,6 +102,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonSend">
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="text">
          <string>Send</string>
         </property>
