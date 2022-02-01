@@ -30,6 +30,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_ui->saveSlot, &QComboBox::currentIndexChanged, this, &MainWindow::loadSelectedUrl);
     connect(m_ui->pushButtonSave, &QAbstractButton::clicked, this, &MainWindow::saveSettings);
 
+    connect(m_ui->autoReconnectBox, &QCheckBox::toggled, this, &MainWindow::setAutoReconnect);
+
     connect(&m_webSocket, &QWebSocket::connected, this, &MainWindow::connected);
     connect(&m_webSocket, &QWebSocket::disconnected, this, &MainWindow::disconnected);
     connect(&m_webSocket, &QWebSocket::stateChanged, this, &MainWindow::stateChanged);
@@ -56,7 +58,11 @@ void MainWindow::connectClicked()
         connectToWebsocket();
     }
     else
+    {
+        m_ui->autoReconnectBox->setChecked(false);
+        m_autoReconnect = false;
         m_webSocket.close();
+    }
 }
 
 void MainWindow::sendClicked()
@@ -106,6 +112,7 @@ void MainWindow::connected()
     m_ui->plainTextEdit->appendHtml(QStringLiteral("<b>%0</b> <i>%1</i><br/>")
                                         .arg(QTime::currentTime().toString())
                                         .arg(tr("Connected")));
+    m_autoReconnectTries = 0;
 }
 
 void MainWindow::disconnected()
@@ -113,11 +120,29 @@ void MainWindow::disconnected()
     m_ui->plainTextEdit->appendHtml(QStringLiteral("<b>%0</b> <i>%1</i><br/>")
                                         .arg(QTime::currentTime().toString())
                                         .arg(tr("Disconnected")));
+    if (m_autoReconnect && m_autoReconnectTries < 5)
+    {
+        m_ui->plainTextEdit->appendHtml(QStringLiteral("<b>%0</b> <i>%1</i><br/>")
+                                            .arg(QTime::currentTime().toString())
+                                            .arg(tr("Auto-Reconnecting...")));
+        connectToWebsocket();
+        m_autoReconnectTries++;
+    }
+    else if (m_autoReconnectTries >= 5)
+    {
+        m_ui->plainTextEdit->appendHtml(QStringLiteral("<b>%0</b> <i>%1</i><br/>")
+                                            .arg(QTime::currentTime().toString())
+                                            .arg(tr("Maximum attempts reached.")));
+        m_ui->autoReconnectBox->setChecked(false);
+        m_autoReconnect = false;
+    }
 }
 
 void MainWindow::stateChanged(QAbstractSocket::SocketState state)
 {
     m_ui->lineEditUrl->setEnabled(state == QAbstractSocket::UnconnectedState);
+    m_ui->saveSlot->setEnabled(state == QAbstractSocket::UnconnectedState);
+    m_ui->pushButtonSave->setEnabled(state == QAbstractSocket::UnconnectedState);
     m_ui->pushButtonConnect->setText(state == QAbstractSocket::UnconnectedState ? tr("Connect") : tr("Disconnect"));
     m_ui->labelStatus->setText(qtEnumToString(state));
     m_ui->lineEditSend->setEnabled(state == QAbstractSocket::ConnectedState);
@@ -180,4 +205,9 @@ void MainWindow::loadSelectedUrl()
 
     if (tmpSocketState == QAbstractSocket::ConnectedState)
         connectToWebsocket();
+}
+
+void MainWindow::setAutoReconnect(bool state)
+{
+    m_autoReconnect = state;
 }
