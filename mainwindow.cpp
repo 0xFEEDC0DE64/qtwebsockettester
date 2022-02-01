@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_ui->lineEditUrl, &QLineEdit::returnPressed, this, &MainWindow::connectClicked);
     connect(m_ui->pushButtonConnect, &QAbstractButton::clicked, this, &MainWindow::connectClicked);
 
-    connect(m_ui->lineEditSend, &QLineEdit::returnPressed, this, &MainWindow::sendClicked);
+    connect(m_ui->comboBoxSend->lineEdit(), &QLineEdit::returnPressed, this, &MainWindow::sendClicked);
     connect(m_ui->pushButtonSend, &QAbstractButton::clicked, this, &MainWindow::sendClicked);
 
     connect(m_ui->saveSlot, &QComboBox::currentIndexChanged, this, &MainWindow::loadSelectedUrl);
@@ -47,6 +47,8 @@ MainWindow::MainWindow(QWidget *parent) :
     loadSettings();
 
     stateChanged(m_webSocket.state());
+
+    qApp->installEventFilter(this);
 }
 
 MainWindow::~MainWindow() = default;
@@ -73,9 +75,9 @@ void MainWindow::sendClicked()
         return;
     }
 
-    const auto msg = m_ui->lineEditSend->text();
+    const auto msg = m_ui->comboBoxSend->currentText();
     m_webSocket.sendTextMessage(msg);
-    m_ui->lineEditSend->clear();
+    m_ui->comboBoxSend->setCurrentIndex(m_ui->comboBoxSend->count());
 
     m_ui->plainTextEdit->appendHtml(QStringLiteral("<b>%0</b> <span style=\"color: %1;\">%2</span>: %3<br/>")
                                     .arg(QTime::currentTime().toString())
@@ -145,7 +147,7 @@ void MainWindow::stateChanged(QAbstractSocket::SocketState state)
     m_ui->pushButtonSave->setEnabled(state == QAbstractSocket::UnconnectedState);
     m_ui->pushButtonConnect->setText(state == QAbstractSocket::UnconnectedState ? tr("Connect") : tr("Disconnect"));
     m_ui->labelStatus->setText(qtEnumToString(state));
-    m_ui->lineEditSend->setEnabled(state == QAbstractSocket::ConnectedState);
+    m_ui->comboBoxSend->setEnabled(state == QAbstractSocket::ConnectedState);
     m_ui->pushButtonSend->setEnabled(state == QAbstractSocket::ConnectedState);
 }
 

@@ -34,6 +34,7 @@ private slots:
     void loadSelectedUrl();
 
     void setAutoReconnect(bool state);
+
 private:
     const std::unique_ptr<Ui::MainWindow> m_ui;
     QWebSocket m_webSocket;
