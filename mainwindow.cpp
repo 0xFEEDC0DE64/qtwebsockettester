@@ -3,6 +3,7 @@
 
 #include <QMessageBox>
 #include <QMetaEnum>
+#include <QSettings>
 
 // utilities
 namespace {
@@ -26,6 +27,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_ui->lineEditSend, &QLineEdit::returnPressed, this, &MainWindow::sendClicked);
     connect(m_ui->pushButtonSend, &QAbstractButton::clicked, this, &MainWindow::sendClicked);
 
+    connect(m_ui->saveSlot, &QComboBox::currentIndexChanged, this, &MainWindow::loadSelectedUrl);
+    connect(m_ui->pushButtonSave, &QAbstractButton::clicked, this, &MainWindow::saveSettings);
+
     connect(&m_webSocket, &QWebSocket::connected, this, &MainWindow::connected);
     connect(&m_webSocket, &QWebSocket::disconnected, this, &MainWindow::disconnected);
     connect(&m_webSocket, &QWebSocket::stateChanged, this, &MainWindow::stateChanged);
@@ -33,6 +37,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&m_webSocket, &QWebSocket::binaryMessageReceived, this, &MainWindow::binaryMessageReceived);
     connect(&m_webSocket, qOverload<QAbstractSocket::SocketError>(&QWebSocket::error), this, &MainWindow::error);
     connect(&m_webSocket, &QWebSocket::pong, this, &MainWindow::pong);
+
+    for (uint8_t i = 1; i <= 10; i++) {
+        m_ui->saveSlot->addItem("Slot "+QString::number(i));
+    }
+
+    loadSettings();
 
     stateChanged(m_webSocket.state());
 }
@@ -43,25 +53,7 @@ void MainWindow::connectClicked()
 {
     if (m_webSocket.state() == QAbstractSocket::UnconnectedState)
     {
-        const auto url = QUrl::fromUserInput(m_ui->lineEditUrl->text());
-        if (url.isEmpty())
-        {
-            QMessageBox::warning(this, tr("Invalid url entered!"), tr("Invalid url entered!"));
-            return;
-        }
-
-        if (url.scheme().toLower() != "ws" &&
-            url.scheme().toLower() != "wss")
-        {
-            QMessageBox::warning(this, tr("Invalid url entered!"), tr("Only urls starting with ws:// or wss:// are allowed!"));
-            return;
-        }
-
-        m_ui->plainTextEdit->appendHtml(QStringLiteral("<b>%0</b> <i>%1</i><br/>")
-                                            .arg(QTime::currentTime().toString())
-                                            .arg(tr("Connecting to %0").arg(url.toString())));
-
-        m_webSocket.open(url);
+        connectToWebsocket();
     }
     else
         m_webSocket.close();
@@ -84,6 +76,29 @@ void MainWindow::sendClicked()
                                     .arg("red")
                                     .arg(tr("SEND"))
                                         .arg(msg));
+}
+
+void MainWindow::connectToWebsocket()
+{
+    const auto url = QUrl::fromUserInput(m_ui->lineEditUrl->text());
+    if (url.isEmpty())
+    {
+        QMessageBox::warning(this, tr("Invalid url entered!"), tr("Invalid url entered!"));
+        return;
+    }
+
+    if (url.scheme().toLower() != "ws" &&
+        url.scheme().toLower() != "wss")
+    {
+        QMessageBox::warning(this, tr("Invalid url entered!"), tr("Only urls starting with ws:// or wss:// are allowed!"));
+        return;
+    }
+
+    m_ui->plainTextEdit->appendHtml(QStringLiteral("<b>%0</b> <i>%1</i><br/>")
+                                        .arg(QTime::currentTime().toString())
+                                        .arg(tr("Connecting to %0").arg(url.toString())));
+
+    m_webSocket.open(url);
 }
 
 void MainWindow::connected()
@@ -135,4 +150,33 @@ void MainWindow::error(QAbstractSocket::SocketError error)
 void MainWindow::pong(quint64 elapsedTime, const QByteArray &payload)
 {
     qDebug() << "pong" << elapsedTime;
+}
+
+void MainWindow::saveSettings()
+{
+    QSettings settings;
+    m_url_slots[m_ui->saveSlot->currentIndex()] = m_ui->lineEditUrl->text();
+    for (uint8_t i = 1; i <= 10; i++) {
+        settings.setValue("slot"+QString::number(i-1), m_url_slots[i-1]);
+    }
+}
+
+void MainWindow::loadSettings()
+{
+    QSettings settings;
+    for (uint8_t i = 1; i <= 10; i++) {
+        QString key = "slot"+QString::number(i-1);
+        m_url_slots[i-1] = settings.value(key, "ws://localhost:1234/path/to/ws").toString();
+    }
+    loadSelectedUrl();
+}
+
+void MainWindow::loadSelectedUrl()
+{
+    const auto tmpSocketState = m_webSocket.state();
+    m_webSocket.close();
+    m_ui->lineEditUrl->setText(m_url_slots[m_ui->saveSlot->currentIndex()]);
+
+    if (tmpSocketState == QAbstractSocket::ConnectedState)
+        connectToWebsocket();
 }
