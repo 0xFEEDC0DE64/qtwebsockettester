@@ -2,6 +2,7 @@
 
 #include <QMainWindow>
 #include <QWebSocket>
+#include <QComboBox>
 
 #include <memory>
 
@@ -18,6 +19,7 @@ public:
 private slots:
     void connectClicked();
     void sendClicked();
+    void connectToWebsocket();
 
     void connected();
     void disconnected();
@@ -27,7 +29,16 @@ private slots:
     void error(QAbstractSocket::SocketError error);
     void pong(quint64 elapsedTime, const QByteArray &payload);
 
+    void saveSettings();
+    void loadSettings();
+    void loadSelectedUrl();
+
+    void setAutoReconnect(bool state);
+
 private:
     const std::unique_ptr<Ui::MainWindow> m_ui;
     QWebSocket m_webSocket;
+    std::array<QString, 10> m_url_slots;
+    bool m_autoReconnect;
+    uint8_t m_autoReconnectTries{0};
 };
