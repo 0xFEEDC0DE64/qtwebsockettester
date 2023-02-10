@@ -3,6 +3,7 @@
 
 #include <QMessageBox>
 #include <QMetaEnum>
+#include <QWebSocketHandshakeOptions>
 
 // utilities
 namespace {
@@ -61,7 +62,10 @@ void MainWindow::connectClicked()
                                             .arg(QTime::currentTime().toString())
                                             .arg(tr("Connecting to %0").arg(url.toString())));
 
-        m_webSocket.open(url);
+        QWebSocketHandshakeOptions options;
+        if (m_ui->checkBoxUseSubprotocol->isChecked())
+            options.setSubprotocols({m_ui->lineEditSubprotocol->text()});
+        m_webSocket.open(url, std::move(options));
     }
     else
         m_webSocket.close();
@@ -104,6 +108,8 @@ void MainWindow::stateChanged(QAbstractSocket::SocketState state)
 {
     m_ui->lineEditUrl->setEnabled(state == QAbstractSocket::UnconnectedState);
     m_ui->pushButtonConnect->setText(state == QAbstractSocket::UnconnectedState ? tr("Connect") : tr("Disconnect"));
+    m_ui->checkBoxUseSubprotocol->setEnabled(state == QAbstractSocket::UnconnectedState);
+    m_ui->lineEditSubprotocol->setEnabled(state == QAbstractSocket::UnconnectedState ? m_ui->checkBoxUseSubprotocol->isChecked() : false);
     m_ui->labelStatus->setText(qtEnumToString(state));
     m_ui->lineEditSend->setEnabled(state == QAbstractSocket::ConnectedState);
     m_ui->pushButtonSend->setEnabled(state == QAbstractSocket::ConnectedState);

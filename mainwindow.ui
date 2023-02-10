@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>1011</width>
     <height>600</height>
    </rect>
   </property>
@@ -16,11 +16,28 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0,0,0">
       <item>
        <widget class="QLineEdit" name="lineEditUrl">
         <property name="text">
          <string>ws://localhost:1234/path/to/ws</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBoxUseSubprotocol">
+        <property name="text">
+         <string>Use subprotocol:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEditSubprotocol">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>ocpp1.6</string>
         </property>
        </widget>
       </item>
@@ -66,5 +83,22 @@
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>checkBoxUseSubprotocol</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>lineEditSubprotocol</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>654</x>
+     <y>22</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>787</x>
+     <y>22</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
