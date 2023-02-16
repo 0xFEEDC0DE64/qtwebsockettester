@@ -27,6 +27,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_ui->lineEditSend, &QLineEdit::returnPressed, this, &MainWindow::sendClicked);
     connect(m_ui->pushButtonSend, &QAbstractButton::clicked, this, &MainWindow::sendClicked);
 
+    connect(m_ui->pushButtonSettings, &QAbstractButton::clicked, this, &MainWindow::settingsClicked);
+
     connect(&m_webSocket, &QWebSocket::connected, this, &MainWindow::connected);
     connect(&m_webSocket, &QWebSocket::disconnected, this, &MainWindow::disconnected);
     connect(&m_webSocket, &QWebSocket::stateChanged, this, &MainWindow::stateChanged);
@@ -87,7 +89,31 @@ void MainWindow::sendClicked()
                                     .arg(QTime::currentTime().toString())
                                     .arg("red")
                                     .arg(tr("SEND"))
-                                        .arg(msg));
+                                    .arg(msg));
+}
+
+void MainWindow::settingsClicked()
+{
+    const auto supportsSsl = QSslSocket::supportsSsl();
+    auto status = QString("supportsSsl = %0\n"
+                          "sslLibraryVersionNumber = %1\n"
+                          "sslLibraryVersionString = %2\n"
+                          "sslLibraryBuildVersionNumber = %3\n"
+                          "sslLibraryBuildVersionString = %4\n"
+                          "availableBackends = %5\n"
+                          "activeBackend = %6")
+            .arg(supportsSsl ? "true" : "false")
+            .arg(QSslSocket::sslLibraryVersionNumber())
+            .arg(QSslSocket::sslLibraryVersionString())
+            .arg(QSslSocket::sslLibraryBuildVersionNumber())
+            .arg(QSslSocket::sslLibraryBuildVersionString())
+            .arg(QSslSocket::availableBackends().join(", "))
+            .arg(QSslSocket::activeBackend());
+
+    if (supportsSsl)
+        QMessageBox::information(this, tr("SSL Support Status"), std::move(status));
+    else
+        QMessageBox::warning(this, tr("SSL Support Status"), std::move(status));
 }
 
 void MainWindow::connected()

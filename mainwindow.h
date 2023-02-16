@@ -18,6 +18,7 @@ public:
 private slots:
     void connectClicked();
     void sendClicked();
+    void settingsClicked();
 
     void connected();
     void disconnected();
