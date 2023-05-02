@@ -37,6 +37,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&m_webSocket, qOverload<QAbstractSocket::SocketError>(&QWebSocket::error), this, &MainWindow::error);
     connect(&m_webSocket, &QWebSocket::pong, this, &MainWindow::pong);
 
+    connect(&m_webSocket, &QWebSocket::peerVerifyError, this, [](const QSslError &error){ qDebug() << "peerVerifyError" << error; });
+    connect(&m_webSocket, &QWebSocket::sslErrors, this, [this](const QList<QSslError> &errors){ qDebug() << "sslErrors" << errors; m_webSocket.ignoreSslErrors(); });
+    connect(&m_webSocket, &QWebSocket::preSharedKeyAuthenticationRequired, this, [](QSslPreSharedKeyAuthenticator *authenticator){ qDebug() << "preSharedKeyAuthenticationRequired" << authenticator; });
+    connect(&m_webSocket, &QWebSocket::alertSent, this, [](QSsl::AlertLevel level, QSsl::AlertType type, const QString &description){ qDebug() << "alertSent" << std::to_underlying(type) << description; });
+    connect(&m_webSocket, &QWebSocket::alertReceived, this, [](QSsl::AlertLevel level, QSsl::AlertType type, const QString &description){ qDebug() << "alertReceived" << std::to_underlying(type) << description; });
+    connect(&m_webSocket, &QWebSocket::handshakeInterruptedOnError, this, [](const QSslError &error){ qDebug() << "handshakeInterruptedOnError" << error; });
+
     stateChanged(m_webSocket.state());
 }
 
@@ -67,6 +74,7 @@ void MainWindow::connectClicked()
         QWebSocketHandshakeOptions options;
         if (m_ui->checkBoxUseSubprotocol->isChecked())
             options.setSubprotocols({m_ui->lineEditSubprotocol->text()});
+        m_webSocket.ignoreSslErrors();
         m_webSocket.open(url, std::move(options));
     }
     else
